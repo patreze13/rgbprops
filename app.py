@@ -20,7 +20,7 @@ API_KEY = "c53884be97bc04e59d5e61e51fa29b9f"
 if "fixadas" not in st.session_state:
     st.session_state.fixadas = []
 
-# 3. Estilização: Fundo #25262B + Visual Limpo
+# 3. Estilização: Fundo #25262B + Identidade Visual RGBProps
 st.markdown("""
 <style>
     .stApp, .reportview-container, .main, [data-testid="stSidebar"] {
@@ -80,7 +80,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 4. Topo Limpo com Logótipo e Seletor de Data
+# 4. Topo com Logótipo e Filtro de Calendário
 col_logo, col_titulo, col_data = st.columns([1, 5, 2])
 with col_logo:
     if os.path.exists("logo.jpg"):
@@ -102,31 +102,42 @@ with col_data:
 
 st.divider()
 
-# 5. Barra Lateral / Filtros
+# 5. Painel Lateral de Filtros Operacionais
 st.sidebar.header("⚙️ Painel de Operações")
 
-busca_termo = st.sidebar.text_input("🔍 Pesquisar", placeholder="Equipa, atleta...")
-min_vant = st.sidebar.slider("Vantagem Mínima (VANT %)", min_value=-5.0, max_value=35.0, value=2.0, step=0.5)
-min_odd = st.sidebar.number_input("Odd Mínima", min_value=1.10, max_value=5.00, value=1.40, step=0.05)
+busca_termo = st.sidebar.text_input("🔍 Pesquisar", placeholder="Equipe, jogador...")
+min_vant = st.sidebar.slider("Vantagem Mínima (VANT %)", min_value=-10.0, max_value=30.0, value=0.0, step=0.5)
+min_odd = st.sidebar.number_input("Odd Mínima", min_value=1.10, max_value=5.00, value=1.35, step=0.05)
 
 match_selecionados = st.sidebar.multiselect("MATCH", options=["A", "B", "C"], default=["A", "B", "C"])
 tipo_selecionado = st.sidebar.radio("Mercado", options=["Todos", "Over", "Under"], horizontal=True)
 
 btn_atualizar = st.sidebar.button("🔄 Atualizar Varredura", use_container_width=True)
 
+# Grade expandida de ligas
 esportes_map = {
-    "NBA": "basketball_nba",
-    "Futebol": "soccer_brazil_campeonato",
-    "WNBA": "basketball_wnba"
+    "NBA": ["basketball_nba"],
+    "WNBA": ["basketball_wnba"],
+    "Futebol": [
+        "soccer_brazil_campeonato",         # Brasileirão Série A
+        "soccer_brazil_campeonato_serie_b", # Brasileirão Série B
+        "soccer_brazil_copa_do_brasil",     # Copa do Brasil
+        "soccer_conmebol_copa_libertadores",# Copa Libertadores
+        "soccer_epl",                       # Premier League inglesa
+        "soccer_spain_la_liga",             # La Liga espanhola
+        "soccer_uefa_champs_league",        # UEFA Champions League
+        "soccer_uefa_europa_league",        # UEFA Europa League
+        "soccer_italy_serie_a"              # Série A Italiana
+    ]
 }
 
-# 6. Requisição com Cache
+# 6. Coleta via The Odds API com Cache
 @st.cache_data(ttl=600)
 def requisitar_odds(sport_key):
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/"
     params = {
         "apiKey": API_KEY,
-        "regions": "eu",
+        "regions": "eu,uk",
         "markets": "totals,h2h",
         "oddsFormat": "decimal"
     }
@@ -170,7 +181,7 @@ def calcular_estatisticas(esporte, linha, tipo_mercado):
         
     return prob_modelo, historico_barras
 
-# 8. Execução da Varredura
+# 8. Execução da Varredura Completa
 def executar_varredura():
     oportunidades = []
     chaves_processadas = set()
@@ -181,75 +192,75 @@ def executar_varredura():
     hoje_str = agora_br.strftime("%Y-%m-%d")
     amanha_str = (agora_br + timedelta(days=1)).strftime("%Y-%m-%d")
     
-    for esporte_nome, sport_key in esportes_map.items():
-        jogos = requisitar_odds(sport_key)
-        
-        for jogo in jogos:
-            commence_time_raw = jogo.get("commence_time")
-            data_jogo_str = ""
-            hora_jogo_str = ""
-            if commence_time_raw:
-                try:
-                    dt_utc = datetime.fromisoformat(commence_time_raw.replace("Z", "+00:00"))
-                    dt_br = dt_utc.astimezone(tz_brasilia)
-                    data_jogo_str = dt_br.strftime("%Y-%m-%d")
-                    hora_jogo_str = dt_br.strftime("%H:%M")
-                except Exception:
-                    data_jogo_str = hoje_str
+    for esporte_nome, chaves_lista in esportes_map.items():
+        for sport_key in chaves_lista:
+            jogos = requisitar_odds(sport_key)
+            
+            for jogo in jogos:
+                commence_time_raw = jogo.get("commence_time")
+                data_jogo_str = ""
+                hora_jogo_str = ""
+                if commence_time_raw:
+                    try:
+                        dt_utc = datetime.fromisoformat(commence_time_raw.replace("Z", "+00:00"))
+                        dt_br = dt_utc.astimezone(tz_brasilia)
+                        data_jogo_str = dt_br.strftime("%Y-%m-%d")
+                        hora_jogo_str = dt_br.strftime("%H:%M")
+                    except Exception:
+                        data_jogo_str = hoje_str
 
-            home_team = jogo.get("home_team")
-            away_team = jogo.get("away_team")
-            evento = f"{home_team} x {away_team}"
-            
-            bookmakers = jogo.get("bookmakers", [])
-            superbet_bookies = [b for b in bookmakers if "superbet" in b.get("title", "").lower()]
-            bookies_para_usar = superbet_bookies if superbet_bookies else bookmakers
-            
-            for bookie in bookies_para_usar:
-                for mercado in bookie.get("markets", []):
-                    if mercado.get("key") in ["totals", "player_points", "player_rebounds", "player_assists"]:
-                        nome_mercado_base = mercado.get("key").replace("_", " ").title()
-                        
-                        for outcome in mercado.get("outcomes", []):
-                            tipo = outcome.get("name")
-                            linha = outcome.get("point")
-                            odd = outcome.get("price")
-                            atleta = outcome.get("description", "")
+                home_team = jogo.get("home_team")
+                away_team = jogo.get("away_team")
+                evento = f"{home_team} x {away_team}"
+                
+                bookmakers = jogo.get("bookmakers", [])
+                superbet_bookies = [b for b in bookmakers if "superbet" in b.get("title", "").lower()]
+                bookies_para_usar = superbet_bookies if superbet_bookies else bookmakers
+                
+                for bookie in bookies_para_usar:
+                    for mercado in bookie.get("markets", []):
+                        if mercado.get("key") in ["totals", "player_points", "player_rebounds", "player_assists"]:
+                            nome_mercado_base = mercado.get("key").replace("_", " ").title()
                             
-                            chave_unica = f"{evento}_{tipo}_{linha}_{atleta}"
-                            if chave_unica in chaves_processadas:
-                                continue
-                            chaves_processadas.add(chave_unica)
-                            
-                            if odd and linha:
-                                contador += 1
-                                prob_odd = (1 / odd) * 100
-                                prob_modelo, historico_barras = calcular_estatisticas(esporte_nome, linha, tipo)
+                            for outcome in mercado.get("outcomes", []):
+                                tipo = outcome.get("name")
+                                linha = outcome.get("point")
+                                odd = outcome.get("price")
+                                atleta = outcome.get("description", "")
                                 
-                                vant = round(prob_modelo - prob_odd, 1)
-                                score = int(min(max((prob_modelo * 0.5) + (vant * 1.5), 0), 99))
-                                match_cat = "A" if score >= 75 else ("B" if score >= 55 else "C")
+                                chave_unica = f"{evento}_{tipo}_{linha}_{atleta}"
+                                if chave_unica in chaves_processadas:
+                                    continue
+                                chaves_processadas.add(chave_unica)
                                 
-                                rotulo_mercado = f"{atleta} - {nome_mercado_base}: {tipo} {linha}" if atleta else f"{tipo} {linha}"
-                                item_id = f"{esporte_nome}_{evento}_{rotulo_mercado}_{contador}"
-                                
-                                oportunidades.append({
-                                    "id": item_id,
-                                    "esporte": esporte_nome,
-                                    "evento": evento,
-                                    "home_team": home_team,
-                                    "hora": hora_jogo_str,
-                                    "data_jogo": data_jogo_str,
-                                    "atleta": atleta,
-                                    "tipo": tipo,
-                                    "linha": linha,
-                                    "mercado": rotulo_mercado,
-                                    "odd": odd,
-                                    "vant": vant,
-                                    "match": match_cat,
-                                    "score": score,
-                                    "historico": historico_barras
-                                })
+                                if odd and linha:
+                                    contador += 1
+                                    prob_odd = (1 / odd) * 100
+                                    prob_modelo, historico_barras = calcular_estatisticas(esporte_nome, linha, tipo)
+                                    
+                                    vant = round(prob_modelo - prob_odd, 1)
+                                    score = int(min(max((prob_modelo * 0.5) + (vant * 1.5), 0), 99))
+                                    match_cat = "A" if score >= 75 else ("B" if score >= 55 else "C")
+                                    
+                                    rotulo_mercado = f"{atleta} - {nome_mercado_base}: {tipo} {linha}" if atleta else f"{tipo} {linha}"
+                                    item_id = f"{esporte_nome}_{evento}_{rotulo_mercado}_{contador}"
+                                    
+                                    oportunidades.append({
+                                        "id": item_id,
+                                        "esporte": esporte_nome,
+                                        "evento": evento,
+                                        "hora": hora_jogo_str,
+                                        "data_jogo": data_jogo_str,
+                                        "atleta": atleta,
+                                        "tipo": tipo,
+                                        "linha": linha,
+                                        "mercado": rotulo_mercado,
+                                        "odd": odd,
+                                        "vant": vant,
+                                        "match": match_cat,
+                                        "score": score,
+                                        "historico": historico_barras
+                                    })
     return oportunidades, hoje_str, amanha_str
 
 dados, data_hoje, data_amanha = executar_varredura()
@@ -287,7 +298,7 @@ def renderizar_lista(lista, tab_prefix, aba_fixadas=False):
         filtrados = lista
         
     filtrados = sorted(filtrados, key=lambda x: x["vant"], reverse=True)
-    st.caption(f"A apresentar **{len(filtrados)}** oportunidades para **{filtro_dia.lower()}**.")
+    st.caption(f"Apresentando **{len(filtrados)}** oportunidades para **{filtro_dia.lower()}**.")
     
     if not filtrados:
         st.info(f"Nenhuma oportunidade encontrada para {filtro_dia.lower()}.")
@@ -318,7 +329,7 @@ def renderizar_lista(lista, tab_prefix, aba_fixadas=False):
                             <span><b>{item['mercado']}</b></span>
                             <span>@</span>
                             <span class="odd-box">{item['odd']:.2f}</span>
-                            <a href="https://superbet.bet.br" target="_blank" class="link-superbet" title="Abrir Superbet">Abrir Superbet ↗</a>
+                            <a href="https://superbet.bet.br" target="_blank" class="link-superbet" title="Abrir Superbet">Superbet ↗</a>
                         </div>
                     </div>
                     <div style="text-align: right; display: flex; gap: 14px; align-items: center;">
