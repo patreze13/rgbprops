@@ -1,0 +1,245 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: #25262B;
+    color: #FFFFFF;
+    padding: 12px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Cabeçalho */
+.top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #373A40;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.brand h1 {
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+.subtitle {
+    font-size: 0.75rem;
+    color: #909296;
+}
+
+/* Filtros de Data */
+.date-filters {
+    display: flex;
+    gap: 6px;
+}
+
+.filter-pill {
+    background-color: #1A1B1E;
+    border: 1px solid #373A40;
+    color: #C1C2C5;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.filter-pill.active {
+    background-color: #fa5252;
+    border-color: #fa5252;
+    color: #FFFFFF;
+}
+
+/* Abas de Esportes */
+.sports-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.tab-btn {
+    background-color: #1A1B1E;
+    border: 1px solid #2C2E33;
+    color: #909296;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.15s;
+}
+
+.tab-btn.active {
+    background-color: #202227;
+    border-color: #4dabf7;
+    color: #4dabf7;
+}
+
+/* Campo de Busca */
+.search-container {
+    margin-bottom: 12px;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #373A40;
+    background-color: #1A1B1E;
+    color: #FFFFFF;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.search-container input:focus {
+    border-color: #4dabf7;
+}
+
+.status-bar {
+    font-size: 0.78rem;
+    color: #909296;
+    margin-bottom: 10px;
+}
+
+/* Card Horizontal */
+.prop-card {
+    background-color: #1A1B1E;
+    border: 1px solid #2C2E33;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    transition: border-color 0.15s;
+}
+
+.prop-card:hover {
+    border-color: #4dabf7;
+}
+
+.card-info {
+    min-width: 220px;
+}
+
+.badge-tag {
+    background-color: #202227;
+    border: 1px solid #373A40;
+    color: #4dabf7;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 6px;
+}
+
+.game-time {
+    font-size: 0.75rem;
+    color: #868e96;
+}
+
+.game-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-top: 4px;
+}
+
+.line-desc {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #F8F9FA;
+    min-width: 200px;
+}
+
+/* Estatísticas L5, L10, L20 */
+.stats-group {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: #868e96;
+}
+
+.stat-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.val-green { color: #40c057; }
+.val-yellow { color: #fab005; }
+.val-red { color: #fa5252; }
+
+/* Micro-gráfico */
+.chart-bars {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+    height: 18px;
+    margin-top: 2px;
+}
+
+.bar-hit {
+    width: 4px;
+    height: 18px;
+    background-color: #40c057;
+    border-radius: 1px;
+}
+
+.bar-miss {
+    width: 4px;
+    height: 6px;
+    background-color: #fa5252;
+    border-radius: 1px;
+}
+
+.badge-match {
+    background-color: #2b8a3e;
+    color: #FFFFFF;
+    font-weight: 800;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.score-text {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #69db7c;
+}

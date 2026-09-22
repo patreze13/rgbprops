@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RGBProps - Mesa Analítica</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Topo / Cabeçalho -->
+    <header class="top-header">
+        <div class="brand">
+            <img src="logo.jpg" alt="RGBProps" class="brand-logo" onerror="this.style.display='none'">
+            <div>
+                <h1>RGBProps</h1>
+                <p class="subtitle">Scouting Estatístico • Consistência & Histórico</p>
+            </div>
+        </div>
+        <div class="date-filters">
+            <button class="filter-pill active" onclick="filtrarDia('hoje', this)">Hoje</button>
+            <button class="filter-pill" onclick="filtrarDia('amanha', this)">Amanhã</button>
+            <button class="filter-pill" onclick="filtrarDia('todos', this)">Todos</button>
+        </div>
+    </header>
+
+    <!-- Barra de Navegação por Esporte -->
+    <nav class="sports-tabs">
+        <button class="tab-btn active" onclick="filtrarEsporte('todos', this)">🔥 TODAS</button>
+        <button class="tab-btn" onclick="filtrarEsporte('WNBA', this)">🎯 WNBA</button>
+        <button class="tab-btn" onclick="filtrarEsporte('NBA', this)">🏀 NBA</button>
+        <button class="tab-btn" onclick="filtrarEsporte('Futebol', this)">⚽ FUTEBOL</button>
+    </nav>
+
+    <!-- Barra de Busca Rápida -->
+    <div class="search-container">
+        <input type="text" id="campoBusca" placeholder="🔍 Buscar jogador, time ou linha..." oninput="executarFiltroGeral()">
+    </div>
+
+    <!-- Contêiner da Lista de Oportunidades -->
+    <main class="main-content">
+        <div class="status-bar">
+            <span id="contagemLinhas">Carregando dados...</span>
+        </div>
+        <div id="listaCards" class="cards-list"></div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -216,7 +216,6 @@ def gerar_dados_operacionais():
         seed = int(abs(hash(f"{c['desc']}_{c['dia']}"))) % (2**31)
         rng = np.random.default_rng(seed)
 
-        # Geração das amostras históricas L5, L10, L20
         base_rate = c["hit_rate"]
         amostra_20 = (rng.uniform(0, 1, 20) < base_rate).tolist()
 
@@ -259,7 +258,7 @@ dados, hoje_str, amanha_str = gerar_dados_operacionais()
 def cor_pct(val):
     return "val-high" if val >= 75 else ("val-med" if val >= 60 else "val-low")
 
-# 6. Renderizador de Lista
+# 6. Renderizador de Lista com HTML Limpo (Sem erro de formatação)
 def renderizar(lista, prefix):
     if filtro_dia == "Hoje":
         filtrados = [d for d in lista if d["dia"] == hoje_str]
@@ -308,58 +307,53 @@ def renderizar(lista, prefix):
 
         col_card, col_btn = st.columns([11, 1])
         with col_card:
-            st.markdown(f"""
-            <div class="prop-row">
-                <div style="min-width: 200px;">
-                    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 2px;">
-                        <span class="badge-mercado">{item['mercado_tag']}</span>
-                        <span style="font-size: 0.75rem; color: #868e96;">{item['hora']} • {item['dia'][5:]}</span>
-                    </div>
-                    <div style="font-weight: 700; font-size: 0.95rem; color: #FFFFFF;">{item['evento']}</div>
-                </div>
-
-                <div style="min-width: 200px;">
-                    <div class="linha-tag">{item['linha_desc']}</div>
-                    <div style="margin-top: 2px;">
-                        <span class="odd-box">{item['odd']:.2f}</span>
-                        <a href="https://superbet.bet.br" target="_blank" style="color:#fa5252; font-size:0.75rem; text-decoration:none; margin-left:6px; font-weight:700;">Superbet ↗</a>
-                    </div>
-                </div>
-
-                <div class="stat-cell">
-                    <span class="stat-label">CHART</span>
-                    <div class="chart-container" style="margin-top: 3px;">{bars_html}</div>
-                </div>
-
-                <div class="stat-cell">
-                    <span class="stat-label">L5%</span>
-                    <span class="stat-val {cor_pct(item['l5'])}">{item['l5']}%</span>
-                </div>
-                <div class="stat-cell">
-                    <span class="stat-label">L10%</span>
-                    <span class="stat-val {cor_pct(item['l10'])}">{item['l10']}%</span>
-                </div>
-                <div class="stat-cell">
-                    <span class="stat-label">L20%</span>
-                    <span class="stat-val {cor_pct(item['l20'])}">{item['l20']}%</span>
-                </div>
-
-                <div style="text-align: right; min-width: 50px;">
-                    <div class="stat-label">VANT</div>
-                    <div class="vant-val">+{item['vant']}%</div>
-                </div>
-
-                <div style="text-align: center; min-width: 35px;">
-                    <div class="stat-label" style="margin-bottom: 2px;">MATCH</div>
-                    <span class="{badge_match}">{item['match']}</span>
-                </div>
-
-                <div style="text-align: right; min-width: 40px;">
-                    <div class="stat-label">SCORE</div>
-                    <div class="score-val">{item['score']}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            card_html = (
+                f'<div class="prop-row">'
+                f'<div style="min-width: 200px;">'
+                f'<div style="display: flex; gap: 6px; align-items: center; margin-bottom: 2px;">'
+                f'<span class="badge-mercado">{item["mercado_tag"]}</span>'
+                f'<span style="font-size: 0.75rem; color: #868e96;">{item["hora"]} • {item["dia"][5:]}</span>'
+                f'</div>'
+                f'<div style="font-weight: 700; font-size: 0.95rem; color: #FFFFFF;">{item["evento"]}</div>'
+                f'</div>'
+                f'<div style="min-width: 200px;">'
+                f'<div class="linha-tag">{item["linha_desc"]}</div>'
+                f'<div style="margin-top: 2px;">'
+                f'<span class="odd-box">{item["odd"]:.2f}</span>'
+                f'<a href="https://superbet.bet.br" target="_blank" style="color:#fa5252; font-size:0.75rem; text-decoration:none; margin-left:6px; font-weight:700;">Superbet ↗</a>'
+                f'</div>'
+                f'</div>'
+                f'<div class="stat-cell">'
+                f'<span class="stat-label">CHART</span>'
+                f'<div class="chart-container" style="margin-top: 3px;">{bars_html}</div>'
+                f'</div>'
+                f'<div class="stat-cell">'
+                f'<span class="stat-label">L5%</span>'
+                f'<span class="stat-val {cor_pct(item["l5"])}">{item["l5"]}%</span>'
+                f'</div>'
+                f'<div class="stat-cell">'
+                f'<span class="stat-label">L10%</span>'
+                f'<span class="stat-val {cor_pct(item["l10"])}">{item["l10"]}%</span>'
+                f'</div>'
+                f'<div class="stat-cell">'
+                f'<span class="stat-label">L20%</span>'
+                f'<span class="stat-val {cor_pct(item["l20"])}">{item["l20"]}%</span>'
+                f'</div>'
+                f'<div style="text-align: right; min-width: 50px;">'
+                f'<div class="stat-label">VANT</div>'
+                f'<div class="vant-val">+{item["vant"]}%</div>'
+                f'</div>'
+                f'<div style="text-align: center; min-width: 35px;">'
+                f'<div class="stat-label" style="margin-bottom: 2px;">MATCH</div>'
+                f'<span class="{badge_match}">{item["match"]}</span>'
+                f'</div>'
+                f'<div style="text-align: right; min-width: 40px;">'
+                f'<div class="stat-label">SCORE</div>'
+                f'<div class="score-val">{item["score"]}</div>'
+                f'</div>'
+                f'</div>'
+            )
+            st.markdown(card_html, unsafe_allow_html=True)
 
         with col_btn:
             lbl = "❌" if is_fix else "📌"
