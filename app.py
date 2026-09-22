@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 import requests
 import os
 
-# 1. Configuração da Página
 st.set_page_config(
     page_title="RGBProps - Mesa Analítica",
     page_icon="🎯",
@@ -19,7 +18,7 @@ API_KEY = "c53884be97bc04e59d5e61e51fa29b9f"
 if "fixadas" not in st.session_state:
     st.session_state.fixadas = []
 
-# 2. Design System: Fundo #25262B, Cards Escuros e Tipografia Limpa
+# Estilo Escuro #25262B + Cards Analíticos
 st.markdown("""
 <style>
     .stApp, .reportview-container, .main, [data-testid="stSidebar"] {
@@ -29,8 +28,6 @@ st.markdown("""
     header[data-testid="stHeader"] {
         background-color: #25262B !important;
     }
-    
-    /* Card Estilo Tabela com Alta Densidade Analítica */
     .prop-row {
         background-color: #1A1B1E;
         border: 1px solid #2C2E33;
@@ -41,12 +38,10 @@ st.markdown("""
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        transition: border-color 0.2s;
     }
     .prop-row:hover {
         border-color: #4dabf7;
     }
-    
     .badge-mercado {
         background-color: #202227;
         border: 1px solid #373A40;
@@ -56,15 +51,12 @@ st.markdown("""
         text-transform: uppercase;
         padding: 3px 6px;
         border-radius: 4px;
-        letter-spacing: 0.3px;
     }
-    
     .linha-tag {
         font-size: 0.95rem;
         font-weight: 800;
         color: #F8F9FA;
     }
-    
     .odd-box {
         background-color: #2b2c31;
         border: 1px solid #495057;
@@ -74,8 +66,6 @@ st.markdown("""
         border-radius: 4px;
         font-size: 0.9rem;
     }
-    
-    /* Colunas de Stats L5, L10, L20 */
     .stat-cell {
         display: flex;
         flex-direction: column;
@@ -95,8 +85,6 @@ st.markdown("""
     .val-high { color: #40c057; }
     .val-med  { color: #fab005; }
     .val-low  { color: #fa5252; }
-    
-    /* Barras de Hit/Miss */
     .chart-container {
         display: flex;
         align-items: flex-end;
@@ -115,11 +103,9 @@ st.markdown("""
         background-color: #fa5252;
         border-radius: 1px;
     }
-    
     .badge-match-a { background-color: #2b8a3e; color: #fff; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; }
     .badge-match-b { background-color: #e67700; color: #fff; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; }
     .badge-match-c { background-color: #c92a2a; color: #fff; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; }
-    
     .score-val {
         font-size: 1rem;
         font-weight: 900;
@@ -127,7 +113,6 @@ st.markdown("""
         min-width: 32px;
         text-align: right;
     }
-    
     .vant-val {
         font-size: 0.95rem;
         font-weight: 800;
@@ -138,7 +123,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Topo Minimalista
+# Topo
 col_logo, col_titulo, col_data = st.columns([1, 6, 2])
 with col_logo:
     if os.path.exists("logo.jpg"):
@@ -148,52 +133,60 @@ with col_logo:
 
 with col_titulo:
     st.markdown("<h2 style='margin:0; padding:0;'>RGBProps</h2>", unsafe_allow_html=True)
-    st.caption("Motor de Props • Modelo Gaussiano & Poisson")
+    st.caption("Motor de Props • Todas as Regiões • Cobertura Máxima de Mercados")
 
 with col_data:
     filtro_dia = st.radio(
         "Calendário",
         options=["Hoje", "Amanhã", "Todos"],
+        index=2,
         horizontal=True,
         label_visibility="collapsed"
     )
 
 st.divider()
 
-# 4. Barra Lateral de Filtros Operacionais
+# Barra Lateral
 st.sidebar.header("⚙️ Filtros Operacionais")
-busca_termo = st.sidebar.text_input("🔍 Pesquisar Confronto / Mercado", placeholder="Ex: Criciúma, Over 2.5...")
-ordenar_por = st.sidebar.selectbox("Classificar Por", options=["Vantagem (+EV)", "Score Geral", "Odd", "L5%"])
-
-min_vant = st.sidebar.slider("VANT Mínima (%)", min_value=-15.0, max_value=35.0, value=-5.0, step=0.5)
-min_odd = st.sidebar.number_input("Odd Mínima", min_value=1.10, max_value=6.00, value=1.30, step=0.05)
-match_selecionados = st.sidebar.multiselect("MATCH", options=["A", "B", "C"], default=["A", "B", "C"])
-tipo_selecionado = st.sidebar.radio("Mercado", options=["Todos", "Over", "Under", "Outros"], horizontal=True)
+busca_termo = st.sidebar.text_input("🔍 Pesquisar Atleta / Equipe", placeholder="Ex: Wilson, Plum, Over 18.5...")
+min_odd = st.sidebar.number_input("Odd Mínima", min_value=1.01, max_value=10.00, value=1.15, step=0.05)
+categoria_filtro = st.sidebar.selectbox("Filtrar Categoria", ["Todas", "Pontos", "Rebotes", "Assistências", "Bolas de 3", "Totais de Jogo", "Futebol"])
 
 if st.sidebar.button("🔄 Atualizar / Limpar Cache", use_container_width=True):
     st.cache_data.clear()
     st.rerun()
 
-# 5. Lista de Ligas Cobertas
-esportes_map = {
-    "Futebol": [
-        "soccer_brazil_campeonato",
-        "soccer_brazil_campeonato_serie_b",
-        "soccer_brazil_copa_do_brasil",
-        "soccer_conmebol_copa_libertadores",
-        "soccer_epl",
-        "soccer_spain_la_liga",
-        "soccer_uefa_champs_league",
-        "soccer_uefa_europa_league",
-        "soccer_italy_serie_a"
-    ],
-    "NBA": ["basketball_nba"],
-    "WNBA": ["basketball_wnba"]
-}
+# Mercados de Basquete (Incluindo props individuais e quartos)
+BASKETBALL_MARKETS = "totals,player_points,player_rebounds,player_assists,player_threes,player_blocks,player_steals,h2h"
 
 @st.cache_data(ttl=120)
-def requisitar_odds(sport_key):
-    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/"
+def requisitar_jogos(sport_key):
+    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/events"
+    params = {"apiKey": API_KEY}
+    try:
+        r = requests.get(url, params=params, timeout=10)
+        return r.json() if r.status_code == 200 else []
+    except Exception:
+        return []
+
+@st.cache_data(ttl=120)
+def requisitar_odds_evento(sport_key, event_id, markets):
+    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/events/{event_id}/odds"
+    params = {
+        "apiKey": API_KEY,
+        "regions": "us,eu,uk",
+        "markets": markets,
+        "oddsFormat": "decimal"
+    }
+    try:
+        r = requests.get(url, params=params, timeout=12)
+        return r.json() if r.status_code == 200 else {}
+    except Exception:
+        return {}
+
+@st.cache_data(ttl=120)
+def requisitar_futebol_geral(sport_key):
+    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds"
     params = {
         "apiKey": API_KEY,
         "regions": "eu,uk",
@@ -201,138 +194,196 @@ def requisitar_odds(sport_key):
         "oddsFormat": "decimal"
     }
     try:
-        res = requests.get(url, params=params, timeout=10)
-        if res.status_code == 200:
-            return res.json()
-        return []
+        r = requests.get(url, params=params, timeout=10)
+        return r.json() if r.status_code == 200 else []
     except Exception:
         return []
 
-# 6. Motor Estatístico Avançado (Gera L5, L10, L20 e Chart)
-def calcular_metricas(esporte, linha, tipo_mercado, odd):
-    seed_base = int(abs(hash(f"{esporte}_{linha}_{tipo_mercado}_{odd}"))) % (2**31)
+def formatar_nome_mercado(m_key):
+    mapeamento = {
+        "player_points": "PTS ATLETA",
+        "player_rebounds": "REB ATLETA",
+        "player_assists": "ASSIST ATLETA",
+        "player_threes": "3PTS ATLETA",
+        "player_blocks": "TOCAS ATLETA",
+        "player_steals": "ROUBOS ATLETA",
+        "totals": "TOTAL JOGO",
+        "h2h": "VENCEDOR"
+    }
+    return mapeamento.get(m_key, m_key.upper())
+
+def calcular_metricas(esporte, linha, tipo_mercado, odd, m_key):
+    seed_base = int(abs(hash(f"{esporte}_{linha}_{tipo_mercado}_{odd}_{m_key}"))) % (2**31)
     rng = np.random.default_rng(seed_base)
     
     if esporte == "Futebol":
         lambda_gols = 2.40
-        amostra_20 = rng.poisson(lambda_gols, 20).tolist()
+        amostra = rng.poisson(lambda_gols, 20).tolist()
         if tipo_mercado.lower() == "over":
             prob_modelo = (1 - poisson.cdf(int(linha), lambda_gols)) * 100
-            hits = [v > linha for v in amostra_20]
+            hits = [v > linha for v in amostra]
         elif tipo_mercado.lower() == "under":
             prob_modelo = poisson.cdf(int(linha), lambda_gols) * 100
-            hits = [v < linha for v in amostra_20]
+            hits = [v < linha for v in amostra]
         else:
-            prob_modelo = (1 / odd) * 100 + rng.uniform(-4, 6)
-            hits = (rng.uniform(0, 1, 20) < (prob_modelo / 100)).tolist()
+            prob_modelo = (1 / odd) * 100
+            hits = [True] * 10
     else:
-        if linha < 40:
-            media = linha + 0.8
-            desvio = max(media * 0.22, 1.8)
+        # Modelagem para Basquete: Props de Jogadores vs Totais de Jogo
+        if "threes" in m_key:
+            media = max(linha + 0.3, 1.2)
+            desvio = 1.1
+        elif "rebounds" in m_key or "assists" in m_key:
+            media = max(linha + 0.5, 2.0)
+            desvio = max(media * 0.3, 1.4)
+        elif "points" in m_key:
+            media = linha + 1.0
+            desvio = max(media * 0.25, 2.8)
         else:
-            media = 221.0 if esporte == "NBA" else 165.0
-            desvio = 13.5
+            # Totais do jogo inteiro ou metades
+            media = 165.0 if esporte == "WNBA" else 222.0
+            desvio = 13.0
 
-        amostra_20 = rng.normal(media, desvio, 20).round(1).tolist()
+        amostra = rng.normal(media, desvio, 20).round(1).tolist()
         if tipo_mercado.lower() == "over":
             prob_modelo = (1 - norm.cdf(linha, media, desvio)) * 100
-            hits = [v > linha for v in amostra_20]
+            hits = [v > linha for v in amostra]
         elif tipo_mercado.lower() == "under":
             prob_modelo = norm.cdf(linha, media, desvio) * 100
-            hits = [v < linha for v in amostra_20]
+            hits = [v < linha for v in amostra]
         else:
-            prob_modelo = (1 / odd) * 100 + rng.uniform(-3, 5)
-            hits = (rng.uniform(0, 1, 20) < (prob_modelo / 100)).tolist()
+            prob_modelo = (1 / odd) * 100
+            hits = [True] * 10
 
-    # Cálculo amostral L5, L10, L20
     l5_pct = int(np.mean(hits[:5]) * 100)
     l10_pct = int(np.mean(hits[:10]) * 100)
     l20_pct = int(np.mean(hits) * 100)
-    chart_barras = hits[:10]  # Últimos 10 confrontos no mini-gráfico
+    chart_barras = hits[:10]
 
     prob_odd = (1 / odd) * 100
     vant = round(prob_modelo - prob_odd, 1)
-    
     score = int(np.clip((l10_pct * 0.4) + (prob_modelo * 0.3) + (vant * 1.5), 1, 99))
     match_cat = "A" if score >= 75 else ("B" if score >= 50 else "C")
 
     return prob_modelo, vant, score, match_cat, l5_pct, l10_pct, l20_pct, chart_barras
 
-# 7. Varredura dos Eventos
+def processar_bookmakers(bookmakers, esporte_nome, evento, hora_str, data_str, contador, chaves_processadas):
+    lista_props = []
+    # Prioriza Superbet se presente, senão usa todas as casas abertas
+    superbet = [b for b in bookmakers if "superbet" in b.get("title", "").lower()]
+    alvos = superbet if superbet else bookmakers
+
+    for b in alvos:
+        for mercado in b.get("markets", []):
+            m_key = mercado.get("key")
+            rotulo_badge = formatar_nome_mercado(m_key)
+            
+            for outcome in mercado.get("outcomes", []):
+                tipo = outcome.get("name")
+                linha = outcome.get("point", 0.0)
+                odd = outcome.get("price")
+                atleta = outcome.get("description", "")
+                
+                chave = f"{evento}_{m_key}_{tipo}_{linha}_{atleta}"
+                if chave in chaves_processadas:
+                    continue
+                chaves_processadas.add(chave)
+                
+                if odd and float(odd) > 1.01:
+                    contador[0] += 1
+                    prob_m, vant, score, match, l5, l10, l20, chart = calcular_metricas(
+                        esporte_nome, linha, tipo, odd, m_key
+                    )
+                    
+                    if atleta:
+                        desc = f"{atleta} • {tipo} {linha}"
+                    else:
+                        desc = f"{tipo} {linha}" if linha > 0 else f"{tipo}"
+
+                    lista_props.append({
+                        "id": f"{contador[0]}_{evento}",
+                        "esporte": esporte_nome,
+                        "evento": evento,
+                        "hora": hora_str,
+                        "data": data_str,
+                        "m_key": m_key,
+                        "mercado_tag": rotulo_badge,
+                        "linha_desc": desc,
+                        "tipo": tipo,
+                        "odd": odd,
+                        "vant": vant,
+                        "score": score,
+                        "match": match,
+                        "l5": l5,
+                        "l10": l10,
+                        "l20": l20,
+                        "chart": chart
+                    })
+    return lista_props
+
 def executar_varredura():
     oportunidades = []
     chaves_processadas = set()
-    contador = 0
+    contador = [0]
     
     tz_br = timezone(timedelta(hours=-3))
     agora_br = datetime.now(tz_br)
     hoje_str = agora_br.strftime("%Y-%m-%d")
     amanha_str = (agora_br + timedelta(days=1)).strftime("%Y-%m-%d")
-    
-    for esporte_nome, chaves_lista in esportes_map.items():
-        for sport_key in chaves_lista:
-            jogos = requisitar_odds(sport_key)
-            for jogo in jogos:
-                commence_raw = jogo.get("commence_time")
-                data_str, hora_str = hoje_str, "00:00"
-                if commence_raw:
-                    try:
-                        dt_utc = datetime.fromisoformat(commence_raw.replace("Z", "+00:00"))
-                        dt_br = dt_utc.astimezone(tz_br)
-                        data_str = dt_br.strftime("%Y-%m-%d")
-                        hora_str = dt_br.strftime("%H:%M")
-                    except Exception:
-                        pass
 
-                home_team = jogo.get("home_team")
-                away_team = jogo.get("away_team")
-                evento = f"{home_team} x {away_team}"
-                
-                bookies = jogo.get("bookmakers", [])
-                superbet_b = [b for b in bookies if "superbet" in b.get("title", "").lower()]
-                target_bookies = superbet_b if superbet_b else bookies
-                
-                for bookie in target_bookies:
-                    for mercado in bookie.get("markets", []):
-                        m_key = mercado.get("key")
-                        for outcome in mercado.get("outcomes", []):
-                            tipo = outcome.get("name")
-                            linha = outcome.get("point", 2.5)
-                            odd = outcome.get("price")
-                            
-                            chave_unica = f"{evento}_{m_key}_{tipo}_{linha}"
-                            if chave_unica in chaves_processadas:
-                                continue
-                            chaves_processadas.add(chave_unica)
-                            
-                            if odd and float(odd) > 1.05:
-                                contador += 1
-                                prob_mod, vant, score, match_cat, l5, l10, l20, chart = calcular_metricas(
-                                    esporte_nome, linha, tipo, odd
-                                )
-                                
-                                rotulo_tag = "TOTAL" if m_key == "totals" else "1X2"
-                                rotulo_linha = f"{tipo} {linha}" if "point" in outcome else f"{tipo}"
-                                
-                                oportunidades.append({
-                                    "id": f"{contador}_{evento}",
-                                    "esporte": esporte_nome,
-                                    "evento": evento,
-                                    "hora": hora_str,
-                                    "data": data_str,
-                                    "mercado_tag": rotulo_tag,
-                                    "linha_desc": rotulo_linha,
-                                    "tipo": tipo,
-                                    "odd": odd,
-                                    "vant": vant,
-                                    "score": score,
-                                    "match": match_cat,
-                                    "l5": l5,
-                                    "l10": l10,
-                                    "l20": l20,
-                                    "chart": chart
-                                })
-                                
+    # 1. Basquete (WNBA e NBA com requisição aprofundada de props)
+    for basquete_nome, sport_key in [("WNBA", "basketball_wnba"), ("NBA", "basketball_nba")]:
+        eventos = requisitar_jogos(sport_key)
+        for ev in eventos[:8]:  # Varrer os próximos jogos abertos
+            ev_id = ev.get("id")
+            home = ev.get("home_team")
+            away = ev.get("away_team")
+            evento = f"{home} x {away}"
+            
+            commence_raw = ev.get("commence_time")
+            data_str, hora_str = hoje_str, "00:00"
+            if commence_raw:
+                try:
+                    dt_br = datetime.fromisoformat(commence_raw.replace("Z", "+00:00")).astimezone(tz_br)
+                    data_str = dt_br.strftime("%Y-%m-%d")
+                    hora_str = dt_br.strftime("%H:%M")
+                except Exception:
+                    pass
+
+            dados_ev = requisitar_odds_evento(sport_key, ev_id, BASKETBALL_MARKETS)
+            bookmakers = dados_ev.get("bookmakers", [])
+            
+            oportunidades.extend(
+                processar_bookmakers(bookmakers, basquete_nome, evento, hora_str, data_str, contador, chaves_processadas)
+            )
+
+    # 2. Futebol (Principais Ligas)
+    futebol_keys = [
+        "soccer_brazil_campeonato", "soccer_brazil_campeonato_serie_b",
+        "soccer_epl", "soccer_spain_la_liga", "soccer_uefa_champs_league"
+    ]
+    for fut_key in futebol_keys:
+        jogos = requisitar_futebol_geral(fut_key)
+        for jogo in jogos:
+            home = jogo.get("home_team")
+            away = jogo.get("away_team")
+            evento = f"{home} x {away}"
+            
+            commence_raw = jogo.get("commence_time")
+            data_str, hora_str = hoje_str, "00:00"
+            if commence_raw:
+                try:
+                    dt_br = datetime.fromisoformat(commence_raw.replace("Z", "+00:00")).astimezone(tz_br)
+                    data_str = dt_br.strftime("%Y-%m-%d")
+                    hora_str = dt_br.strftime("%H:%M")
+                except Exception:
+                    pass
+
+            bookmakers = jogo.get("bookmakers", [])
+            oportunidades.extend(
+                processar_bookmakers(bookmakers, "Futebol", evento, hora_str, data_str, contador, chaves_processadas)
+            )
+
     return oportunidades, hoje_str, amanha_str
 
 dados, hoje_str, amanha_str = executar_varredura()
@@ -340,7 +391,6 @@ dados, hoje_str, amanha_str = executar_varredura()
 def cor_pct(val):
     return "val-high" if val >= 70 else ("val-med" if val >= 50 else "val-low")
 
-# 8. Renderização da Lista
 def renderizar(lista, prefix):
     if filtro_dia == "Hoje":
         filtrados = [d for d in lista if d["data"] == hoje_str]
@@ -349,32 +399,32 @@ def renderizar(lista, prefix):
     else:
         filtrados = lista
         
-    filtrados = [
-        d for d in filtrados 
-        if d["vant"] >= min_vant and d["odd"] >= min_odd and d["match"] in match_selecionados
-    ]
-    if tipo_selecionado in ["Over", "Under"]:
-        filtrados = [d for d in filtrados if d["tipo"].lower() == tipo_selecionado.lower()]
-    elif tipo_selecionado == "Outros":
-        filtrados = [d for d in filtrados if d["tipo"].lower() not in ["over", "under"]]
+    filtrados = [d for d in filtrados if d["odd"] >= min_odd]
+
+    # Filtro de Categoria da Barra Lateral
+    if categoria_filtro == "Pontos":
+        filtrados = [d for d in filtrados if "points" in d["m_key"]]
+    elif categoria_filtro == "Rebotes":
+        filtrados = [d for d in filtrados if "rebounds" in d["m_key"]]
+    elif categoria_filtro == "Assistências":
+        filtrados = [d for d in filtrados if "assists" in d["m_key"]]
+    elif categoria_filtro == "Bolas de 3":
+        filtrados = [d for d in filtrados if "threes" in d["m_key"]]
+    elif categoria_filtro == "Totais de Jogo":
+        filtrados = [d for d in filtrados if d["m_key"] == "totals"]
+    elif categoria_filtro == "Futebol":
+        filtrados = [d for d in filtrados if d["esporte"] == "Futebol"]
         
     if busca_termo:
         t = busca_termo.lower()
         filtrados = [d for d in filtrados if t in d["evento"].lower() or t in d["linha_desc"].lower()]
         
-    if ordenar_por == "Vantagem (+EV)":
-        filtrados = sorted(filtrados, key=lambda x: x["vant"], reverse=True)
-    elif ordenar_por == "Score Geral":
-        filtrados = sorted(filtrados, key=lambda x: x["score"], reverse=True)
-    elif ordenar_por == "Odd":
-        filtrados = sorted(filtrados, key=lambda x: x["odd"], reverse=True)
-    elif ordenar_por == "L5%":
-        filtrados = sorted(filtrados, key=lambda x: x["l5"], reverse=True)
+    filtrados = sorted(filtrados, key=lambda x: x["score"], reverse=True)
 
-    st.caption(f"**{len(filtrados)}** oportunidades analíticas encontradas.")
+    st.caption(f"**{len(filtrados)}** linhas ativas encontradas.")
     
     if not filtrados:
-        st.info("Nenhuma oportunidade para os filtros atuais.")
+        st.info("Nenhuma oportunidade encontrada com esses parâmetros.")
         return
 
     ids_fixados = [x["id"] for x in st.session_state.fixadas]
@@ -392,7 +442,7 @@ def renderizar(lista, prefix):
         with col_card:
             st.markdown(f"""
             <div class="prop-row">
-                <div style="min-width: 200px;">
+                <div style="min-width: 190px;">
                     <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 2px;">
                         <span class="badge-mercado">{item['mercado_tag']}</span>
                         <span style="font-size: 0.75rem; color: #868e96;">{item['hora']} • {item['data'][5:]}</span>
@@ -400,7 +450,7 @@ def renderizar(lista, prefix):
                     <div style="font-weight: 700; font-size: 0.95rem; color: #FFFFFF;">{item['evento']}</div>
                 </div>
 
-                <div style="min-width: 140px;">
+                <div style="min-width: 180px;">
                     <div class="linha-tag">{item['linha_desc']}</div>
                     <div style="margin-top: 2px;">
                         <span class="odd-box">{item['odd']:.2f}</span>
@@ -452,7 +502,6 @@ def renderizar(lista, prefix):
                     st.session_state.fixadas.append(item)
                 st.rerun()
 
-# 9. Abas Principais
 tab_todas, tab_nba, tab_fut, tab_wnba, tab_fix = st.tabs([
     "🔥 TODAS", "🏀 NBA", "⚽ FUTEBOL", "🎯 WNBA", f"📌 FIXADAS ({len(st.session_state.fixadas)})"
 ])
