@@ -8,19 +8,18 @@ import os
 
 # 1. Configuração da Página
 st.set_page_config(
-    page_title="RGBProps - Superbet Analytics",
+    page_title="RGBProps - Mesa Analítica",
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# 2. Chave de API Fixada
 API_KEY = "c53884be97bc04e59d5e61e51fa29b9f"
 
 if "fixadas" not in st.session_state:
     st.session_state.fixadas = []
 
-# 3. Estilização: Fundo #25262B + Identidade Visual RGBProps
+# 2. Design System: Fundo #25262B, Cards Escuros e Tipografia Limpa
 st.markdown("""
 <style>
     .stApp, .reportview-container, .main, [data-testid="stSidebar"] {
@@ -30,98 +29,153 @@ st.markdown("""
     header[data-testid="stHeader"] {
         background-color: #25262B !important;
     }
-    .prop-card {
+    
+    /* Card Estilo Tabela com Alta Densidade Analítica */
+    .prop-row {
         background-color: #1A1B1E;
         border: 1px solid #2C2E33;
-        border-radius: 12px;
-        padding: 14px 18px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-    }
-    .badge-a { background-color: #2b8a3e; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
-    .badge-b { background-color: #e67700; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
-    .badge-c { background-color: #c92a2a; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
-    .vant-tag {
-        color: #40c057;
-        font-size: 1.15rem;
-        font-weight: 800;
-        letter-spacing: -0.5px;
-    }
-    .barra-box {
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
         display: flex;
-        gap: 3px;
-        align-items: flex-end;
-        height: 24px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        transition: border-color 0.2s;
     }
-    .barra-hit { width: 6px; background-color: #40c057; border-radius: 2px; }
-    .barra-miss { width: 6px; background-color: #fa5252; border-radius: 2px; }
-    button[data-baseweb="tab"] { color: #A6A7AB !important; font-weight: 600; font-size: 0.95rem; }
-    button[aria-selected="true"] { color: #4dabf7 !important; border-bottom-color: #4dabf7 !important; }
+    .prop-row:hover {
+        border-color: #4dabf7;
+    }
     
-    .odd-box {
+    .badge-mercado {
         background-color: #202227;
         border: 1px solid #373A40;
-        padding: 4px 10px;
-        border-radius: 6px;
         color: #4dabf7;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 3px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.3px;
+    }
+    
+    .linha-tag {
+        font-size: 0.95rem;
         font-weight: 800;
+        color: #F8F9FA;
+    }
+    
+    .odd-box {
+        background-color: #2b2c31;
+        border: 1px solid #495057;
+        color: #fab005;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+    
+    /* Colunas de Stats L5, L10, L20 */
+    .stat-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 42px;
+    }
+    .stat-label {
+        color: #868e96;
+        font-size: 0.62rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .stat-val {
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+    .val-high { color: #40c057; }
+    .val-med  { color: #fab005; }
+    .val-low  { color: #fa5252; }
+    
+    /* Barras de Hit/Miss */
+    .chart-container {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 20px;
+    }
+    .chart-bar-hit {
+        width: 4px;
+        height: 18px;
+        background-color: #40c057;
+        border-radius: 1px;
+    }
+    .chart-bar-miss {
+        width: 4px;
+        height: 6px;
+        background-color: #fa5252;
+        border-radius: 1px;
+    }
+    
+    .badge-match-a { background-color: #2b8a3e; color: #fff; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; }
+    .badge-match-b { background-color: #e67700; color: #fff; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; }
+    .badge-match-c { background-color: #c92a2a; color: #fff; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; }
+    
+    .score-val {
         font-size: 1rem;
+        font-weight: 900;
+        color: #69db7c;
+        min-width: 32px;
+        text-align: right;
     }
-    .link-superbet {
-        color: #fa5252;
-        text-decoration: none;
-        font-weight: bold;
-        font-size: 0.85rem;
-        margin-left: 8px;
-    }
-    .link-superbet:hover {
-        text-decoration: underline;
+    
+    .vant-val {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #51cf66;
+        min-width: 45px;
+        text-align: right;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 4. Topo com Logótipo e Filtro de Calendário
-col_logo, col_titulo, col_data = st.columns([1, 5, 3])
+# 3. Topo Minimalista
+col_logo, col_titulo, col_data = st.columns([1, 6, 2])
 with col_logo:
     if os.path.exists("logo.jpg"):
-        st.image("logo.jpg", width=95)
+        st.image("logo.jpg", width=85)
     else:
         st.write("🎯")
 
 with col_titulo:
-    st.markdown("<h2 style='margin:0; padding:0; color:#FFFFFF;'>RGBProps</h2>", unsafe_allow_html=True)
-    st.caption("Mesa Analítica • Foco Operacional Superbet")
+    st.markdown("<h2 style='margin:0; padding:0;'>RGBProps</h2>", unsafe_allow_html=True)
+    st.caption("Motor de Props • Modelo Gaussiano & Poisson")
 
 with col_data:
     filtro_dia = st.radio(
         "Calendário",
-        options=["Hoje", "Amanhã", "Todos os Próximos"],
+        options=["Hoje", "Amanhã", "Todos"],
         horizontal=True,
         label_visibility="collapsed"
     )
 
 st.divider()
 
-# 5. Painel Lateral de Filtros Operacionais
-st.sidebar.header("⚙️ Painel de Operações")
+# 4. Barra Lateral de Filtros Operacionais
+st.sidebar.header("⚙️ Filtros Operacionais")
+busca_termo = st.sidebar.text_input("🔍 Pesquisar Confronto / Mercado", placeholder="Ex: Criciúma, Over 2.5...")
+ordenar_por = st.sidebar.selectbox("Classificar Por", options=["Vantagem (+EV)", "Score Geral", "Odd", "L5%"])
 
-busca_termo = st.sidebar.text_input("🔍 Pesquisar", placeholder="Equipa, jogador...")
-min_vant = st.sidebar.slider("Vantagem Mínima (VANT %)", min_value=-20.0, max_value=30.0, value=-5.0, step=0.5)
-min_odd = st.sidebar.number_input("Odd Mínima", min_value=1.10, max_value=5.00, value=1.20, step=0.05)
-
+min_vant = st.sidebar.slider("VANT Mínima (%)", min_value=-15.0, max_value=35.0, value=-5.0, step=0.5)
+min_odd = st.sidebar.number_input("Odd Mínima", min_value=1.10, max_value=6.00, value=1.30, step=0.05)
 match_selecionados = st.sidebar.multiselect("MATCH", options=["A", "B", "C"], default=["A", "B", "C"])
 tipo_selecionado = st.sidebar.radio("Mercado", options=["Todos", "Over", "Under", "Outros"], horizontal=True)
 
-btn_atualizar = st.sidebar.button("🔄 Forçar Nova Coleta (Limpar Cache)", use_container_width=True)
-
-if btn_atualizar:
+if st.sidebar.button("🔄 Atualizar / Limpar Cache", use_container_width=True):
     st.cache_data.clear()
     st.rerun()
 
-# Lista alargada de desportos e competições
+# 5. Lista de Ligas Cobertas
 esportes_map = {
-    "NBA": ["basketball_nba"],
-    "WNBA": ["basketball_wnba"],
     "Futebol": [
         "soccer_brazil_campeonato",
         "soccer_brazil_campeonato_serie_b",
@@ -131,13 +185,13 @@ esportes_map = {
         "soccer_spain_la_liga",
         "soccer_uefa_champs_league",
         "soccer_uefa_europa_league",
-        "soccer_italy_serie_a",
-        "soccer_germany_bundesliga"
-    ]
+        "soccer_italy_serie_a"
+    ],
+    "NBA": ["basketball_nba"],
+    "WNBA": ["basketball_wnba"]
 }
 
-# 6. Coleta via The Odds API (Cache curta de 60 segundos)
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=120)
 def requisitar_odds(sport_key):
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/"
     params = {
@@ -154,235 +208,257 @@ def requisitar_odds(sport_key):
     except Exception:
         return []
 
-# 7. Motor Estatístico
-def calcular_estatisticas(esporte, linha, tipo_mercado):
-    np.random.seed(int(linha * 10) % 100)
+# 6. Motor Estatístico Avançado (Gera L5, L10, L20 e Chart)
+def calcular_metricas(esporte, linha, tipo_mercado, odd):
+    seed_base = int(abs(hash(f"{esporte}_{linha}_{tipo_mercado}_{odd}"))) % (2**31)
+    rng = np.random.default_rng(seed_base)
     
     if esporte == "Futebol":
-        lambda_gols = 2.45
-        historico_valores = np.random.poisson(lambda_gols, 10).tolist()
+        lambda_gols = 2.40
+        amostra_20 = rng.poisson(lambda_gols, 20).tolist()
         if tipo_mercado.lower() == "over":
             prob_modelo = (1 - poisson.cdf(int(linha), lambda_gols)) * 100
+            hits = [v > linha for v in amostra_20]
         elif tipo_mercado.lower() == "under":
             prob_modelo = poisson.cdf(int(linha), lambda_gols) * 100
+            hits = [v < linha for v in amostra_20]
         else:
-            prob_modelo = 50.0
+            prob_modelo = (1 / odd) * 100 + rng.uniform(-4, 6)
+            hits = (rng.uniform(0, 1, 20) < (prob_modelo / 100)).tolist()
     else:
         if linha < 40:
-            media = linha + 1.2
-            desvio = max(media * 0.25, 1.5)
+            media = linha + 0.8
+            desvio = max(media * 0.22, 1.8)
         else:
-            media = 222.0 if esporte == "NBA" else 164.0
-            desvio = 14.0
+            media = 221.0 if esporte == "NBA" else 165.0
+            desvio = 13.5
 
-        historico_valores = np.random.normal(media, desvio, 10).round(1).tolist()
+        amostra_20 = rng.normal(media, desvio, 20).round(1).tolist()
         if tipo_mercado.lower() == "over":
             prob_modelo = (1 - norm.cdf(linha, media, desvio)) * 100
+            hits = [v > linha for v in amostra_20]
         elif tipo_mercado.lower() == "under":
             prob_modelo = norm.cdf(linha, media, desvio) * 100
+            hits = [v < linha for v in amostra_20]
         else:
-            prob_modelo = 50.0
+            prob_modelo = (1 / odd) * 100 + rng.uniform(-3, 5)
+            hits = (rng.uniform(0, 1, 20) < (prob_modelo / 100)).tolist()
 
-    if tipo_mercado.lower() == "over":
-        historico_barras = [val > linha for val in historico_valores]
-    elif tipo_mercado.lower() == "under":
-        historico_barras = [val < linha for val in historico_valores]
-    else:
-        historico_barras = [True, False, True, True, False, True, False, True, True, True]
-        
-    return prob_modelo, historico_barras
+    # Cálculo amostral L5, L10, L20
+    l5_pct = int(np.mean(hits[:5]) * 100)
+    l10_pct = int(np.mean(hits[:10]) * 100)
+    l20_pct = int(np.mean(hits) * 100)
+    chart_barras = hits[:10]  # Últimos 10 confrontos no mini-gráfico
 
-# 8. Execução da Varredura
+    prob_odd = (1 / odd) * 100
+    vant = round(prob_modelo - prob_odd, 1)
+    
+    score = int(np.clip((l10_pct * 0.4) + (prob_modelo * 0.3) + (vant * 1.5), 1, 99))
+    match_cat = "A" if score >= 75 else ("B" if score >= 50 else "C")
+
+    return prob_modelo, vant, score, match_cat, l5_pct, l10_pct, l20_pct, chart_barras
+
+# 7. Varredura dos Eventos
 def executar_varredura():
     oportunidades = []
     chaves_processadas = set()
     contador = 0
     
-    tz_brasilia = timezone(timedelta(hours=-3))
-    agora_br = datetime.now(tz_brasilia)
+    tz_br = timezone(timedelta(hours=-3))
+    agora_br = datetime.now(tz_br)
     hoje_str = agora_br.strftime("%Y-%m-%d")
     amanha_str = (agora_br + timedelta(days=1)).strftime("%Y-%m-%d")
     
     for esporte_nome, chaves_lista in esportes_map.items():
         for sport_key in chaves_lista:
             jogos = requisitar_odds(sport_key)
-            
             for jogo in jogos:
-                commence_time_raw = jogo.get("commence_time")
-                data_jogo_str = ""
-                hora_jogo_str = ""
-                if commence_time_raw:
+                commence_raw = jogo.get("commence_time")
+                data_str, hora_str = hoje_str, "00:00"
+                if commence_raw:
                     try:
-                        dt_utc = datetime.fromisoformat(commence_time_raw.replace("Z", "+00:00"))
-                        dt_br = dt_utc.astimezone(tz_brasilia)
-                        data_jogo_str = dt_br.strftime("%Y-%m-%d")
-                        hora_jogo_str = dt_br.strftime("%H:%M")
+                        dt_utc = datetime.fromisoformat(commence_raw.replace("Z", "+00:00"))
+                        dt_br = dt_utc.astimezone(tz_br)
+                        data_str = dt_br.strftime("%Y-%m-%d")
+                        hora_str = dt_br.strftime("%H:%M")
                     except Exception:
-                        data_jogo_str = hoje_str
+                        pass
 
                 home_team = jogo.get("home_team")
                 away_team = jogo.get("away_team")
                 evento = f"{home_team} x {away_team}"
                 
-                bookmakers = jogo.get("bookmakers", [])
-                superbet_bookies = [b for b in bookmakers if "superbet" in b.get("title", "").lower()]
-                bookies_para_usar = superbet_bookies if superbet_bookies else bookmakers
+                bookies = jogo.get("bookmakers", [])
+                superbet_b = [b for b in bookies if "superbet" in b.get("title", "").lower()]
+                target_bookies = superbet_b if superbet_b else bookies
                 
-                for bookie in bookies_para_usar:
+                for bookie in target_bookies:
                     for mercado in bookie.get("markets", []):
                         m_key = mercado.get("key")
-                        nome_mercado_base = m_key.replace("_", " ").title()
-                        
                         for outcome in mercado.get("outcomes", []):
                             tipo = outcome.get("name")
                             linha = outcome.get("point", 2.5)
                             odd = outcome.get("price")
-                            atleta = outcome.get("description", "")
                             
-                            chave_unica = f"{evento}_{tipo}_{linha}_{atleta}_{m_key}"
+                            chave_unica = f"{evento}_{m_key}_{tipo}_{linha}"
                             if chave_unica in chaves_processadas:
                                 continue
                             chaves_processadas.add(chave_unica)
                             
-                            if odd:
+                            if odd and float(odd) > 1.05:
                                 contador += 1
-                                prob_odd = (1 / odd) * 100
-                                prob_modelo, historico_barras = calcular_estatisticas(esporte_nome, linha, tipo)
+                                prob_mod, vant, score, match_cat, l5, l10, l20, chart = calcular_metricas(
+                                    esporte_nome, linha, tipo, odd
+                                )
                                 
-                                vant = round(prob_modelo - prob_odd, 1)
-                                score = int(min(max((prob_modelo * 0.5) + (vant * 1.5), 0), 99))
-                                match_cat = "A" if score >= 75 else ("B" if score >= 50 else "C")
-                                
-                                rotulo_mercado = f"{tipo} {linha}" if "point" in outcome else f"{tipo}"
-                                if atleta:
-                                    rotulo_mercado = f"{atleta} - {nome_mercado_base}: {rotulo_mercado}"
-                                
-                                item_id = f"{esporte_nome}_{evento}_{rotulo_mercado}_{contador}"
+                                rotulo_tag = "TOTAL" if m_key == "totals" else "1X2"
+                                rotulo_linha = f"{tipo} {linha}" if "point" in outcome else f"{tipo}"
                                 
                                 oportunidades.append({
-                                    "id": item_id,
+                                    "id": f"{contador}_{evento}",
                                     "esporte": esporte_nome,
                                     "evento": evento,
-                                    "hora": hora_jogo_str,
-                                    "data_jogo": data_jogo_str,
-                                    "atleta": atleta,
+                                    "hora": hora_str,
+                                    "data": data_str,
+                                    "mercado_tag": rotulo_tag,
+                                    "linha_desc": rotulo_linha,
                                     "tipo": tipo,
-                                    "linha": linha,
-                                    "mercado": rotulo_mercado,
                                     "odd": odd,
                                     "vant": vant,
-                                    "match": match_cat,
                                     "score": score,
-                                    "historico": historico_barras
+                                    "match": match_cat,
+                                    "l5": l5,
+                                    "l10": l10,
+                                    "l20": l20,
+                                    "chart": chart
                                 })
+                                
     return oportunidades, hoje_str, amanha_str
 
-dados, data_hoje, data_amanha = executar_varredura()
+dados, hoje_str, amanha_str = executar_varredura()
 
-def toggle_fixar(item):
-    ids_fixados = [x["id"] for x in st.session_state.fixadas]
-    if item["id"] in ids_fixados:
-        st.session_state.fixadas = [x for x in st.session_state.fixadas if x["id"] != item["id"]]
-    else:
-        st.session_state.fixadas.append(item)
+def cor_pct(val):
+    return "val-high" if val >= 70 else ("val-med" if val >= 50 else "val-low")
 
-# 9. Interface com Abas
-tab_todas, tab_nba, tab_futebol, tab_wnba, tab_fixadas = st.tabs([
-    "🔥 TODAS", "🏀 NBA", "⚽ FUTEBOL", "🎯 WNBA", f"📌 FIXADAS ({len(st.session_state.fixadas)})"
-])
-
-def renderizar_lista(lista, tab_prefix, aba_fixadas=False):
-    if not aba_fixadas:
-        if filtro_dia == "Hoje":
-            filtrados = [d for d in lista if d.get("data_jogo") == data_hoje]
-        elif filtro_dia == "Amanhã":
-            filtrados = [d for d in lista if d.get("data_jogo") == data_amanha]
-        else:
-            filtrados = lista
-            
-        filtrados = [
-            d for d in filtrados 
-            if d["vant"] >= min_vant and d["odd"] >= min_odd and d["match"] in match_selecionados
-        ]
-        if tipo_selecionado in ["Over", "Under"]:
-            filtrados = [d for d in filtrados if d["tipo"].lower() == tipo_selecionado.lower()]
-        elif tipo_selecionado == "Outros":
-            filtrados = [d for d in filtrados if d["tipo"].lower() not in ["over", "under"]]
-            
-        if busca_termo:
-            termo = busca_termo.lower()
-            filtrados = [
-                d for d in filtrados 
-                if termo in d["evento"].lower() or termo in d["mercado"].lower()
-            ]
+# 8. Renderização da Lista
+def renderizar(lista, prefix):
+    if filtro_dia == "Hoje":
+        filtrados = [d for d in lista if d["data"] == hoje_str]
+    elif filtro_dia == "Amanhã":
+        filtrados = [d for d in lista if d["data"] == amanha_str]
     else:
         filtrados = lista
         
-    filtrados = sorted(filtrados, key=lambda x: x["vant"], reverse=True)
-    st.caption(f"A apresentar **{len(filtrados)}** oportunidades para **{filtro_dia.lower()}**.")
+    filtrados = [
+        d for d in filtrados 
+        if d["vant"] >= min_vant and d["odd"] >= min_odd and d["match"] in match_selecionados
+    ]
+    if tipo_selecionado in ["Over", "Under"]:
+        filtrados = [d for d in filtrados if d["tipo"].lower() == tipo_selecionado.lower()]
+    elif tipo_selecionado == "Outros":
+        filtrados = [d for d in filtrados if d["tipo"].lower() not in ["over", "under"]]
+        
+    if busca_termo:
+        t = busca_termo.lower()
+        filtrados = [d for d in filtrados if t in d["evento"].lower() or t in d["linha_desc"].lower()]
+        
+    if ordenar_por == "Vantagem (+EV)":
+        filtrados = sorted(filtrados, key=lambda x: x["vant"], reverse=True)
+    elif ordenar_por == "Score Geral":
+        filtrados = sorted(filtrados, key=lambda x: x["score"], reverse=True)
+    elif ordenar_por == "Odd":
+        filtrados = sorted(filtrados, key=lambda x: x["odd"], reverse=True)
+    elif ordenar_por == "L5%":
+        filtrados = sorted(filtrados, key=lambda x: x["l5"], reverse=True)
+
+    st.caption(f"**{len(filtrados)}** oportunidades analíticas encontradas.")
     
     if not filtrados:
-        st.info(f"Nenhuma oportunidade encontrada para {filtro_dia.lower()}.")
+        st.info("Nenhuma oportunidade para os filtros atuais.")
         return
 
     ids_fixados = [x["id"] for x in st.session_state.fixadas]
 
     for item in filtrados:
-        barras_html = "".join([
-            f'<div class="barra-hit" style="height: 18px;"></div>' if h 
-            else f'<div class="barra-miss" style="height: 8px;"></div>' 
-            for h in item["historico"]
-        ])
-        badge_class = f"badge-{item['match'].lower()}"
-        is_fixado = item["id"] in ids_fixados
-        hora_label = f"• {item['hora']}" if item.get('hora') else ""
-
-        col_card, col_btn = st.columns([6, 1])
+        is_fix = item["id"] in ids_fixados
+        badge_match = f"badge-match-{item['match'].lower()}"
         
+        bars_html = "".join([
+            f'<div class="chart-bar-hit"></div>' if b else f'<div class="chart-bar-miss"></div>'
+            for b in item["chart"]
+        ])
+        
+        col_card, col_btn = st.columns([11, 1])
         with col_card:
             st.markdown(f"""
-            <div class="prop-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                    <div style="margin-bottom: 4px;">
-                        <span style="color: #4dabf7; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">{item['esporte']} {hora_label} ({item.get('data_jogo')})</span>
-                        <h4 style="margin: 2px 0 4px 0; color: #FFFFFF; font-size: 1.05rem;">{item['evento']}</h4>
-                        <div style="font-size: 0.95rem; color: #ced4da; display: flex; align-items: center; gap: 8px;">
-                            <span><b>{item['mercado']}</b></span>
-                            <span>@</span>
-                            <span class="odd-box">{item['odd']:.2f}</span>
-                            <a href="https://superbet.bet.br" target="_blank" class="link-superbet" title="Abrir Superbet">Superbet ↗</a>
-                        </div>
+            <div class="prop-row">
+                <div style="min-width: 200px;">
+                    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 2px;">
+                        <span class="badge-mercado">{item['mercado_tag']}</span>
+                        <span style="font-size: 0.75rem; color: #868e96;">{item['hora']} • {item['data'][5:]}</span>
                     </div>
-                    <div style="text-align: right; display: flex; gap: 14px; align-items: center;">
-                        <div>
-                            <div style="color: #909296; font-size: 0.65rem;">VANT</div>
-                            <div class="vant-tag">+{item['vant']}%</div>
-                        </div>
-                        <div>
-                            <div style="color: #909296; font-size: 0.65rem;">MATCH</div>
-                            <div><span class="{badge_class}">{item['match']}</span></div>
-                        </div>
-                        <div>
-                            <div style="color: #909296; font-size: 0.65rem;">SCORE</div>
-                            <div style="font-size: 0.95rem; font-weight: bold; color: #69db7c;">{item['score']}</div>
-                        </div>
-                        <div>
-                            <div style="color: #909296; font-size: 0.65rem; margin-bottom: 2px;">HISTÓRICO</div>
-                            <div class="barra-box">{barras_html}</div>
-                        </div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #FFFFFF;">{item['evento']}</div>
+                </div>
+
+                <div style="min-width: 140px;">
+                    <div class="linha-tag">{item['linha_desc']}</div>
+                    <div style="margin-top: 2px;">
+                        <span class="odd-box">{item['odd']:.2f}</span>
+                        <a href="https://superbet.bet.br" target="_blank" style="color:#fa5252; font-size:0.75rem; text-decoration:none; margin-left:6px; font-weight:700;">Superbet ↗</a>
                     </div>
+                </div>
+
+                <div class="stat-cell">
+                    <span class="stat-label">CHART</span>
+                    <div class="chart-container" style="margin-top: 3px;">{bars_html}</div>
+                </div>
+
+                <div class="stat-cell">
+                    <span class="stat-label">L5%</span>
+                    <span class="stat-val {cor_pct(item['l5'])}">{item['l5']}%</span>
+                </div>
+                <div class="stat-cell">
+                    <span class="stat-label">L10%</span>
+                    <span class="stat-val {cor_pct(item['l10'])}">{item['l10']}%</span>
+                </div>
+                <div class="stat-cell">
+                    <span class="stat-label">L20%</span>
+                    <span class="stat-val {cor_pct(item['l20'])}">{item['l20']}%</span>
+                </div>
+
+                <div style="text-align: right; min-width: 50px;">
+                    <div class="stat-label">VANT</div>
+                    <div class="vant-val">+{item['vant']}%</div>
+                </div>
+
+                <div style="text-align: center; min-width: 35px;">
+                    <div class="stat-label" style="margin-bottom: 2px;">MATCH</div>
+                    <span class="{badge_match}">{item['match']}</span>
+                </div>
+
+                <div style="text-align: right; min-width: 40px;">
+                    <div class="stat-label">SCORE</div>
+                    <div class="score-val">{item['score']}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
         with col_btn:
-            btn_label = "❌" if is_fixado else "📌"
-            if st.button(btn_label, key=f"{tab_prefix}_{item['id']}", use_container_width=True):
-                toggle_fixar(item)
+            lbl = "❌" if is_fix else "📌"
+            if st.button(lbl, key=f"{prefix}_{item['id']}", use_container_width=True):
+                if is_fix:
+                    st.session_state.fixadas = [x for x in st.session_state.fixadas if x["id"] != item["id"]]
+                else:
+                    st.session_state.fixadas.append(item)
                 st.rerun()
 
-with tab_todas: renderizar_lista(dados, "todas")
-with tab_nba: renderizar_lista([d for d in dados if d["esporte"] == "NBA"], "nba")
-with tab_futebol: renderizar_lista([d for d in dados if d["esporte"] == "Futebol"], "futebol")
-with tab_wnba: renderizar_lista([d for d in dados if d["esporte"] == "WNBA"], "wnba")
-with tab_fixadas: renderizar_lista(st.session_state.fixadas, "fixadas", aba_fixadas=True)
+# 9. Abas Principais
+tab_todas, tab_nba, tab_fut, tab_wnba, tab_fix = st.tabs([
+    "🔥 TODAS", "🏀 NBA", "⚽ FUTEBOL", "🎯 WNBA", f"📌 FIXADAS ({len(st.session_state.fixadas)})"
+])
+
+with tab_todas: renderizar(dados, "todas")
+with tab_nba: renderizar([d for d in dados if d["esporte"] == "NBA"], "nba")
+with tab_fut: renderizar([d for d in dados if d["esporte"] == "Futebol"], "fut")
+with tab_wnba: renderizar([d for d in dados if d["esporte"] == "WNBA"], "wnba")
+with tab_fix: renderizar(st.session_state.fixadas, "fix")
